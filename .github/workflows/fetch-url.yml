@@ -23,12 +23,17 @@ jobs:
 
       - name: Fetch URL content with curl
         run: |
+          # اگر Input تنظیم نشده باشد، از ادامه جلوگیری کن
           URL="${{ github.event.inputs.url }}"
+          if [ -z "$URL" ]; then
+            echo "⚠️ No URL provided in workflow inputs."
+            exit 1
+          fi
+
           echo "Fetching: $URL"
 
-          {
-            
-            curl -L \ >   --max-time 30 \ >   -A "Mozilla/5.0" \ >   "$URL" > fetched-content.html
+          # دستور curl بدون بلاک { } و با پارامترهای صحیح
+          curl -L --max-time 30 -A "Mozilla/5.0" "$URL" > fetched-content.html
 
       - name: Commit and push changes
         run: |
