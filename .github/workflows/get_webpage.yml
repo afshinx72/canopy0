@@ -10,15 +10,13 @@ on:
 jobs:
   display_content:
     runs-on: ubuntu-latest
-    environment: my-environment
     steps:
       - name: Fetch Webpage Content
         id: fetch_content
         shell: bash
         run: |
           URL="${{ github.event.inputs.url }}"
-          CONTENT=$(curl -s "$URL")
-          echo "CONTENT=$CONTENT" >> $GITHUB_ENV
+          curl -s "$URL" > webpage.txt
 
       - name: Display Webpage Content
-        run: echo "${{ env.CONTENT }}"
+        run: cat webpage.txt
