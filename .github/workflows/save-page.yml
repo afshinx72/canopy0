@@ -1,0 +1,83 @@
+name: Save Web Page Offline
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL of the page to save offline"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  save-page:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate URL
+        run: |
+          URL="${{ github.event.inputs.url }}"
+          if ! [[ "$URL" =~ ^https?:// ]]; then
+            echo "Only http:// or https:// URLs are allowed."
+            exit 1
+          fi
+
+      - name: Clean old saved page
+        run: |
+          rm -rf saved-page
+          mkdir -p saved-page
+
+      - name: Download page and assets for offline viewing
+        run: |
+          URL="${{ github.event.inputs.url }}"
+
+          cd saved-page
+
+          wget \
+            --page-requisites \
+            --convert-links \
+            --adjust-extension \
+            --span-hosts \
+            --no-parent \
+            --directory-prefix=. \
+            --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" \
+            "$URL"
+
+      - name: Create root index.html
+        run: |
+          FIRST_HTML=$(find saved-page -type f -name "*.html" | head -n 1)
+
+          if [ -z "$FIRST_HTML" ]; then
+            echo "No HTML file downloaded."
+            exit 1
+          fi
+
+          cat > index.html <<EOF
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Offline Saved Page</title>
+          </head>
+          <body>
+            <h1>Offline Saved Page</h1>
+            <p>Saved from: ${{ github.event.inputs.url }}</p>
+            <p><a href="$FIRST_HTML">Open saved page</a></p>
+          </body>
+          </html>
+          EOF
+
+      - name: Commit and push files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add saved-page index.html
+          git commit -m "Save offline page from workflow" || echo "No changes to commit"
+          git push
