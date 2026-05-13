@@ -19,16 +19,16 @@ jobs:
           curl -s "$URL" > webpage.txt
 
       - name: Upload webpage.txt as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: webpage
           path: webpage.txt
 
-      - name: Display Webpage Content
-        uses: actions/download-artifact@v3
+      - name: Download webpage artifact
+        uses: actions/download-artifact@v4
         with:
           name: webpage
           path: /tmp/webpage
 
-      - name: Display downloaded webpage content
+      - name: Display Webpage Content
         run: cat /tmp/webpage/webpage.txt
