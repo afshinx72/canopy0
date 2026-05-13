@@ -1,0 +1,42 @@
+name: Fetch URL and Store to Repo
+
+# برای اجرای دستی، از workflow_dispatch استفاده می‌کنیم
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'آدرس URL که باید فراخوانی شود'
+        required: true
+        type: string
+
+jobs:
+  fetch_and_commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ۱) ریپوی را checkout می‌کنیم. token GITHUB_TOKEN برای push استفاده می‌شود
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # برای push لازم است تمام تاریخچه‌ را داشته باشیم
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ۲) محتوای URL را با curl دریافت می‌کنیم
+      - name: Fetch content
+        run: |
+          curl -L "${{ github.event.inputs.url }}" -o fetched.html
+          # اگر می‌خواهید خروجی در پوشه‌ی output ذخیره شود:
+          # curl -L "${{ github.event.inputs.url }}" -o output/fetched.html
+
+      # ۳) فایل را commit و push می‌کنیم
+      - name: Commit and push
+        run: |
+          git config --global user.email "github-action@example.com"
+          git config --global user.name  "GitHub Action"
+
+          git add fetched.html            # اگر خروجی در پوشه‌ی دیگری است، مسیر را تغییر دهید
+          git commit -m "Fetched content from ${{ github.event.inputs.url }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
